@@ -51,6 +51,13 @@ mosquitto_pub -h 127.0.0.1 -p 1884 -t "test" -m "hello again"
 // -v to keep alive connection 
 mosquitto_sub -h 127.0.0.1 -p 1884 -t "test" -v 
 
+![MQTT Broker Demo](ScrennShots/broker_logs.png)
+
+![MQTT Broker Demo](ScrennShots/sub1_log.png)
+
+![MQTT Broker Demo](ScrennShots/sub2_log.png)
+
+
 
 
 ## 🚀 How to Build
