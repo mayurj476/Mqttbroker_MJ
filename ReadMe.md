@@ -27,7 +27,14 @@ I wanted to deeply understand how MQTT protocol works under the hood. Instead of
 | Threaded Connections  | ✅     |
 | Graceful Disconnection| ✅     |
 
-## 🧪 Tested With
+
+
+##  Upcoming Features
+- Wildcard topic matching (`+` and `#`)
+- observer patern implementation
+
+
+##  Tested With
 
 - `mosquitto_pub` and `mosquitto_sub` CLI tools
 - Custom client connections over `localhost`
@@ -35,8 +42,7 @@ I wanted to deeply understand how MQTT protocol works under the hood. Instead of
 
 
 
-Upcoming implementation
-- Wildcard topic matching (`+` and `#`)
+
 
 
 used mqtt protocal :
