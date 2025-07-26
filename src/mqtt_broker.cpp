@@ -43,6 +43,7 @@ void MqttBroker::start()
         int clientSock = accept(serverSock, (sockaddr *)&clientAddr, &len);
         if (clientSock >= 0)
         {
+            //Detaching the client handler to allow multiple clients
             std::thread(&MqttBroker::handleClient, this, clientSock).detach();
         }
     }
@@ -80,10 +81,6 @@ bool MqttBroker::processPacket(int clientSock)
         if (bytes < 0)
         {
             Logger::log(LEVEL::WARNING, "Receive failed on socket %d", clientSock);
-        }
-        else
-        {
-            Logger::log(LEVEL::INFO, "Client %d disconnected", clientSock);
         }
         buffer.clear();
         close(clientSock);
@@ -213,42 +210,3 @@ void MqttBroker::handleSubscribe(int clientSock, const std::vector<uint8_t> &buf
 
     send(clientSock, suback.data(), suback.size(), 0);
 }
-/*
-void MqttBroker::handleSubscribe(int clientSock, const std::vector<uint8_t> &buffer)
-{
-    uint16_t packetId = get_uint16(buffer, 2);
-
-    size_t offset = 4;
-    while (offset + 2 < buffer.size())
-    {
-        uint16_t topicLen = get_uint16(buffer, offset);
-        offset += 2;
-
-        if (offset + topicLen > buffer.size())
-            break;
-
-        std::string topic(buffer.begin() + offset, buffer.begin() + offset + topicLen);
-        offset += topicLen;
-
-        uint8_t qos = buffer[offset]; // usually 0
-        offset++;
-
-        {
-            std::lock_guard<std::mutex> lock(subMutex);
-            topicSubscribers[topic].insert(clientSock);
-        }
-
-        Logger::log(LEVEL::INFO, "Client %d subscribed to topic '%s'", clientSock, topic.c_str());
-    }
-
-    // Send SUBACK
-    std::vector<uint8_t> suback = {
-        0x90, // SUBACK
-        0x03, // remaining length
-        static_cast<uint8_t>(packetId >> 8),
-        static_cast<uint8_t>(packetId & 0xFF),
-        0x00 // QoS 0 granted
-    };
-    send(clientSock, suback.data(), suback.size(), 0);
-}
-*/
