@@ -9,6 +9,14 @@
 #include <mutex>
 
 
+enum class Signal
+{
+    CONNECT=1,
+    PUBLISH=3,
+    SUBSCRIBE=8,
+    DISCONNECT=14
+};
+
 class MqttBroker {
 public:
     MqttBroker(int port);

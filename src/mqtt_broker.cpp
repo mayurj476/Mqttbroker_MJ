@@ -64,7 +64,7 @@ void MqttBroker::handleClient(int clientSock)
     {
         if (!processPacket(clientSock))
         {
-            Logger::log(LEVEL::INFO, "Client disconnected or error: %d", clientSock);
+            Logger::log(LEVEL::INFO, "Client disconnected : %d", clientSock);
             break;
         }
     }
@@ -77,9 +77,9 @@ bool MqttBroker::processPacket(int clientSock)
     int bytes = recv(clientSock, buffer.data(), buffer.size(), 0);
     if (bytes <= 0)
     {
-        std::cerr << "[INFO] Client disconnected or error\n";
         if (bytes < 0)
         {
+            Logger::log(LEVEL::WARNING, "Client disconnected or error ");
             Logger::log(LEVEL::WARNING, "Receive failed on socket %d", clientSock);
         }
         buffer.clear();
@@ -90,19 +90,19 @@ bool MqttBroker::processPacket(int clientSock)
     buffer.resize(bytes);
 
     uint8_t packetType = buffer[0] >> 4;
-    switch (packetType)
+    switch (static_cast<Signal>(packetType))
     {
-    case 1: // CONNECT
+    case Signal::CONNECT: // CONNECT
         Logger::log(LEVEL::INFO, "Client %d connected", clientSock);
         sendConnack(clientSock);
         break;
-    case 3: // PUBLISH
+    case Signal::PUBLISH: // PUBLISH
         handlePublish(clientSock, buffer, bytes);
         break;
-    case 8: // SUBSCRIBE
+    case Signal::SUBSCRIBE: // SUBSCRIBE
         handleSubscribe(clientSock, buffer);
         break;
-    case 14: // DISCONNECT
+    case Signal::DISCONNECT: // DISCONNECT
         close(clientSock);
         //Logger::log(LEVEL::INFO, "Client %d disconnected", clientSock);
         return false;
