@@ -32,15 +32,8 @@ I wanted to deeply understand how MQTT protocol works under the hood. Instead of
 - `mosquitto_pub` and `mosquitto_sub` CLI tools
 - Custom client connections over `localhost`
 
-## 🚀 How to Build
 
-```bash
-git clone https://github.com/mayurjadhav/mqtt-broker-cpp.git
-cd mqtt-broker-cpp
-mkdir build && cd build
-cmake ..
-make
-./mqtt_broker
+
 
 Upcoming implementation
 - Wildcard topic matching (`+` and `#`)
@@ -57,3 +50,16 @@ mosquitto_pub -h 127.0.0.1 -p 1884 -t "test" -m "hello again"
 
 // -v to keep alive connection 
 mosquitto_sub -h 127.0.0.1 -p 1884 -t "test" -v 
+
+
+
+## 🚀 How to Build
+
+```bash
+git clone https://github.com/mayurjadhav/mqtt-broker-cpp.git
+cd mqtt-broker-cpp
+mkdir build && cd build
+cmake ..
+make
+./mqtt_broker
+
