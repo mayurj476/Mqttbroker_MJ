@@ -75,7 +75,8 @@ mkdir build && cd build
 cmake ..
 make
 ./mqtt_broker
+```
 
+![Banner](ScrennShots/banner.png)
 
-![Banner](https://github.com/mayurj476/Mqttbroker_MJ/blob/main/ScrennShots/banner.png)
 
