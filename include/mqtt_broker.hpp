@@ -28,6 +28,7 @@ private:
     bool processPacket(int clientSock);
     void sendConnack(int clientSock);
     void logPublish(int clientSock, const std::string& topic, const std::string& message);
+    bool matchTopic(const std::string& sub, const std::string& topic);
 
 
 

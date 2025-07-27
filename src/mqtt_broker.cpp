@@ -3,8 +3,11 @@
 #include <unistd.h>
 #include <cstring>
 #include <arpa/inet.h>
+#include <sstream>
 #include "mqtt_utils.hpp"
 #include "logger.hpp"
+
+#define SUB_ACK 0x90
 
 MqttBroker::MqttBroker(int port) : port(port), serverSock(-1) {}
 
@@ -43,7 +46,7 @@ void MqttBroker::start()
         int clientSock = accept(serverSock, (sockaddr *)&clientAddr, &len);
         if (clientSock >= 0)
         {
-            //Detaching the client handler to allow multiple clients
+            // Detaching the client handler to allow multiple clients
             std::thread(&MqttBroker::handleClient, this, clientSock).detach();
         }
     }
@@ -104,7 +107,7 @@ bool MqttBroker::processPacket(int clientSock)
         break;
     case Signal::DISCONNECT: // DISCONNECT
         close(clientSock);
-        //Logger::log(LEVEL::INFO, "Client %d disconnected", clientSock);
+        // Logger::log(LEVEL::INFO, "Client %d disconnected", clientSock);
         return false;
     default:
         Logger::log(LEVEL::WARNING, "Unsupported packet type: %d", packetType);
@@ -144,29 +147,35 @@ void MqttBroker::forwardToSubscribers(const std::string &topic, const std::strin
 {
     std::lock_guard<std::mutex> lock(subMutex);
 
-    if (topicSubscribers.count(topic))
+    for (const auto &entry : topicSubscribers)
     {
-        for (int sock : topicSubscribers[topic])
+        const std::string &subscription = entry.first;
+        const std::unordered_set<int> &sockets = entry.second;
+
+        if (matchTopic(subscription, topic))
         {
-            if (sock == excludeSock)
-                continue;
+            for (int sock : sockets)
+            {
+                if (sock == excludeSock)
+                    continue;
 
-            std::vector<uint8_t> packet;
-            std::string header = "\x30"; // PUBLISH, QoS 0
-            std::string fullPayload;
+                std::vector<uint8_t> packet;
+                std::string header = "\x30"; // PUBLISH, QoS 0
+                std::string fullPayload;
 
-            // Build payload: [topic length][topic][message]
-            uint16_t len = topic.size();
-            fullPayload.push_back((len >> 8) & 0xFF);
-            fullPayload.push_back(len & 0xFF);
-            fullPayload += topic;
-            fullPayload += message;
+                // Build payload: [topic length][topic][message]
+                uint16_t len = topic.size();
+                fullPayload.push_back((len >> 8) & 0xFF);
+                fullPayload.push_back(len & 0xFF);
+                fullPayload += topic;
+                fullPayload += message;
 
-            header += static_cast<char>(fullPayload.size());
-            packet.insert(packet.end(), header.begin(), header.end());
-            packet.insert(packet.end(), fullPayload.begin(), fullPayload.end());
+                header += static_cast<char>(fullPayload.size());
+                packet.insert(packet.end(), header.begin(), header.end());
+                packet.insert(packet.end(), fullPayload.begin(), fullPayload.end());
 
-            send(sock, packet.data(), packet.size(), 0);
+                send(sock, packet.data(), packet.size(), 0);
+            }
         }
     }
 }
@@ -202,11 +211,51 @@ void MqttBroker::handleSubscribe(int clientSock, const std::vector<uint8_t> &buf
 
     // Build SUBACK
     std::vector<uint8_t> suback;
-    suback.push_back(0x90); // SUBACK
+    suback.push_back(SUB_ACK);                   // SUBACK
     suback.push_back(2 + returnCodes.size()); // Remaining length
     suback.push_back(static_cast<uint8_t>(packetId >> 8));
     suback.push_back(static_cast<uint8_t>(packetId & 0xFF));
     suback.insert(suback.end(), returnCodes.begin(), returnCodes.end());
 
     send(clientSock, suback.data(), suback.size(), 0);
+}
+
+bool MqttBroker::matchTopic(const std::string &subscription, const std::string &topic)
+{
+    Logger::log(LEVEL::DEBUG, "Matching subscription '%s' with topic '%s'", subscription.c_str(), topic.c_str());
+
+    std::istringstream subStream(subscription);
+    std::istringstream topicStream(topic);
+
+    std::string subToken, topicToken;
+
+    while (true)
+    {
+        bool hasSub = static_cast<bool>(std::getline(subStream, subToken, '/'));
+        bool hasTopic = static_cast<bool>(std::getline(topicStream, topicToken, '/'));
+
+        if (!hasSub && !hasTopic)
+        {
+            // Reached end of both, full match
+            return true;
+        }
+
+        if (hasSub && subToken == "#")
+        {
+            return true; // Match everything after
+        }
+
+        if (!hasSub || !hasTopic)
+        {
+            // One stream ended before the other, not a match
+            return false;
+        }
+
+        if (subToken != "+" && subToken != topicToken)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
