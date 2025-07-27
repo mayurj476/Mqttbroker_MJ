@@ -69,7 +69,7 @@ mosquitto_sub -h 127.0.0.1 -p 1884 -t "test" -v
 ## 🚀 How to Build
 
 ```bash
-git clone https://github.com/mayurjadhav/mqtt-broker-cpp.git
+git clone https://github.com/mayurj476/Mqttbroker_MJ.git
 cd mqtt-broker-cpp
 mkdir build && cd build
 cmake ..
