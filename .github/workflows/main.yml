@@ -1,4 +1,4 @@
-            - name: github-action-auto-format
+  - name: github-action-auto-format
   # You may pin to the exact commit or the version.
   # uses: cloudposse/github-action-auto-format@970af4c15a720047204400fe5b5ae52fb2991e9b
   uses: cloudposse/github-action-auto-format@v0.12.0
